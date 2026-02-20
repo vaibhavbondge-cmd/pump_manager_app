@@ -18,33 +18,44 @@ class PumpApp extends StatelessWidget {
   }
 }
 
-class ShiftEntry {
-  final DateTime date;
-  final double petrolSale;
-  final double dieselSale;
-
-  ShiftEntry({
-    required this.date,
-    required this.petrolSale,
-    required this.dieselSale,
-  });
-}
+/* ================= MODELS ================= */
 
 class PurchaseEntry {
   final DateTime date;
-  final double petrolPrice;
-  final double dieselPrice;
   final double petrolQty;
+  final double petrolPrice;
   final double dieselQty;
+  final double dieselPrice;
 
   PurchaseEntry({
     required this.date,
-    required this.petrolPrice,
-    required this.dieselPrice,
     required this.petrolQty,
+    required this.petrolPrice,
     required this.dieselQty,
+    required this.dieselPrice,
   });
 }
+
+class MeterEntry {
+  final DateTime date;
+  final double petrolOpen;
+  final double petrolClose;
+  final double dieselOpen;
+  final double dieselClose;
+
+  MeterEntry({
+    required this.date,
+    required this.petrolOpen,
+    required this.petrolClose,
+    required this.dieselOpen,
+    required this.dieselClose,
+  });
+
+  double get petrolSale => petrolClose - petrolOpen;
+  double get dieselSale => dieselClose - dieselOpen;
+}
+
+/* ================= HOME ================= */
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -54,114 +65,111 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  final petrolController = TextEditingController();
-  final dieselController = TextEditingController();
-
-  final purchasePetrolPrice = TextEditingController();
-  final purchaseDieselPrice = TextEditingController();
-  final purchasePetrolQty = TextEditingController();
-  final purchaseDieselQty = TextEditingController();
-
-  List<ShiftEntry> shifts = [];
   List<PurchaseEntry> purchases = [];
+  List<MeterEntry> meters = [];
 
-  double get latestPetrolPrice =>
-      purchases.isEmpty ? 0 : purchases.last.petrolPrice;
+  double petrolStock = 0;
+  double dieselStock = 0;
 
-  double get latestDieselPrice =>
-      purchases.isEmpty ? 0 : purchases.last.dieselPrice;
+  double totalProfit = 0;
 
-  void addShift() {
-    final petrol = double.tryParse(petrolController.text) ?? 0;
-    final diesel = double.tryParse(dieselController.text) ?? 0;
+  /* Controllers */
 
-    setState(() {
-      shifts.add(ShiftEntry(
-        date: DateTime.now(),
-        petrolSale: petrol,
-        dieselSale: diesel,
-      ));
-    });
+  final petrolQtyCtrl = TextEditingController();
+  final petrolPriceCtrl = TextEditingController();
+  final dieselQtyCtrl = TextEditingController();
+  final dieselPriceCtrl = TextEditingController();
 
-    petrolController.clear();
-    dieselController.clear();
-  }
+  final petrolOpenCtrl = TextEditingController();
+  final petrolCloseCtrl = TextEditingController();
+  final dieselOpenCtrl = TextEditingController();
+  final dieselCloseCtrl = TextEditingController();
+
+  /* ================= PURCHASE ================= */
 
   void addPurchase() {
-    final petrolPrice = double.tryParse(purchasePetrolPrice.text) ?? 0;
-    final dieselPrice = double.tryParse(purchaseDieselPrice.text) ?? 0;
-    final petrolQty = double.tryParse(purchasePetrolQty.text) ?? 0;
-    final dieselQty = double.tryParse(purchaseDieselQty.text) ?? 0;
+    double pQty = double.tryParse(petrolQtyCtrl.text) ?? 0;
+    double pPrice = double.tryParse(petrolPriceCtrl.text) ?? 0;
+    double dQty = double.tryParse(dieselQtyCtrl.text) ?? 0;
+    double dPrice = double.tryParse(dieselPriceCtrl.text) ?? 0;
 
-    setState(() {
-      purchases.add(PurchaseEntry(
+    purchases.add(
+      PurchaseEntry(
         date: DateTime.now(),
-        petrolPrice: petrolPrice,
-        dieselPrice: dieselPrice,
-        petrolQty: petrolQty,
-        dieselQty: dieselQty,
-      ));
-    });
-
-    purchasePetrolPrice.clear();
-    purchaseDieselPrice.clear();
-    purchasePetrolQty.clear();
-    purchaseDieselQty.clear();
-  }
-
-  double get totalPetrolSale =>
-      shifts.fold(0, (sum, item) => sum + item.petrolSale);
-
-  double get totalDieselSale =>
-      shifts.fold(0, (sum, item) => sum + item.dieselSale);
-
-  double get profit {
-    if (purchases.isEmpty) return 0;
-
-    double petrolProfit = totalPetrolSale * (110 - latestPetrolPrice);
-    double dieselProfit = totalDieselSale * (95 - latestDieselPrice);
-
-    return petrolProfit + dieselProfit;
-  }
-
-  void openHistory() {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (_) => HistoryScreen(
-          shifts: shifts,
-          purchases: purchases,
-        ),
+        petrolQty: pQty,
+        petrolPrice: pPrice,
+        dieselQty: dQty,
+        dieselPrice: dPrice,
       ),
     );
+
+    petrolStock += pQty;
+    dieselStock += dQty;
+
+    clearFields();
+    setState(() {});
   }
 
-  Widget box(String title, String value) {
-    return Expanded(
-      child: Card(
-        child: Padding(
-          padding: const EdgeInsets.all(12),
-          child: Column(
-            children: [
-              Text(title, style: const TextStyle(fontWeight: FontWeight.bold)),
-              const SizedBox(height: 5),
-              Text(value, style: const TextStyle(fontSize: 18)),
-            ],
-          ),
-        ),
-      ),
+  /* ================= METER ================= */
+
+  void addMeter() {
+    double pOpen = double.tryParse(petrolOpenCtrl.text) ?? 0;
+    double pClose = double.tryParse(petrolCloseCtrl.text) ?? 0;
+    double dOpen = double.tryParse(dieselOpenCtrl.text) ?? 0;
+    double dClose = double.tryParse(dieselCloseCtrl.text) ?? 0;
+
+    MeterEntry entry = MeterEntry(
+      date: DateTime.now(),
+      petrolOpen: pOpen,
+      petrolClose: pClose,
+      dieselOpen: dOpen,
+      dieselClose: dClose,
     );
+
+    meters.add(entry);
+
+    petrolStock -= entry.petrolSale;
+    dieselStock -= entry.dieselSale;
+
+    // Simple profit logic (you can improve later)
+    totalProfit += (entry.petrolSale * 3) + (entry.dieselSale * 2);
+
+    clearFields();
+    setState(() {});
   }
+
+  void clearFields() {
+    petrolQtyCtrl.clear();
+    petrolPriceCtrl.clear();
+    dieselQtyCtrl.clear();
+    dieselPriceCtrl.clear();
+    petrolOpenCtrl.clear();
+    petrolCloseCtrl.clear();
+    dieselOpenCtrl.clear();
+    dieselCloseCtrl.clear();
+  }
+
+  /* ================= UI ================= */
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Pump Manager'),
+        title: const Text("Pump Manager"),
         actions: [
           IconButton(
             icon: const Icon(Icons.history),
-            onPressed: openHistory,
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => HistoryScreen(
+                    purchases: purchases,
+                    meters: meters,
+                  ),
+                ),
+              );
+            },
           )
         ],
       ),
@@ -169,80 +177,94 @@ class _HomeScreenState extends State<HomeScreen> {
         padding: const EdgeInsets.all(12),
         child: Column(
           children: [
-            const Text("Add Shift", style: TextStyle(fontSize: 18)),
-
-            TextField(
-              controller: petrolController,
-              keyboardType: TextInputType.number,
-              decoration: const InputDecoration(labelText: "Petrol Sale (L)"),
-            ),
-            TextField(
-              controller: dieselController,
-              keyboardType: TextInputType.number,
-              decoration: const InputDecoration(labelText: "Diesel Sale (L)"),
-            ),
-            ElevatedButton(onPressed: addShift, child: const Text("Add Shift")),
-
-            const Divider(),
-
-            const Text("Add Purchase", style: TextStyle(fontSize: 18)),
-
-            TextField(
-              controller: purchasePetrolPrice,
-              keyboardType: TextInputType.number,
-              decoration:
-                  const InputDecoration(labelText: "Petrol Purchase Price"),
-            ),
-            TextField(
-              controller: purchaseDieselPrice,
-              keyboardType: TextInputType.number,
-              decoration:
-                  const InputDecoration(labelText: "Diesel Purchase Price"),
-            ),
-            TextField(
-              controller: purchasePetrolQty,
-              keyboardType: TextInputType.number,
-              decoration:
-                  const InputDecoration(labelText: "Petrol Quantity (L)"),
-            ),
-            TextField(
-              controller: purchaseDieselQty,
-              keyboardType: TextInputType.number,
-              decoration:
-                  const InputDecoration(labelText: "Diesel Quantity (L)"),
-            ),
-            ElevatedButton(
-                onPressed: addPurchase, child: const Text("Add Purchase")),
-
-            const Divider(),
-
-            Row(
-              children: [
-                box("Petrol Sale", totalPetrolSale.toStringAsFixed(2)),
-                box("Diesel Sale", totalDieselSale.toStringAsFixed(2)),
-              ],
-            ),
-            Row(
-              children: [
-                box("Profit", profit.toStringAsFixed(2)),
-                box("Shifts", shifts.length.toString()),
-              ],
-            ),
+            dashboardCard(),
+            const SizedBox(height: 10),
+            purchaseCard(),
+            const SizedBox(height: 10),
+            meterCard(),
           ],
+        ),
+      ),
+    );
+  }
+
+  Widget dashboardCard() {
+    return Card(
+      color: Colors.blue.shade50,
+      child: ListTile(
+        title: const Text("Dashboard"),
+        subtitle: Text(
+          "Petrol Stock: $petrolStock L\n"
+          "Diesel Stock: $dieselStock L\n"
+          "Total Profit: ₹$totalProfit",
+        ),
+      ),
+    );
+  }
+
+  Widget purchaseCard() {
+    return Card(
+      child: Column(
+        children: [
+          const ListTile(title: Text("Purchase Entry")),
+          field(petrolQtyCtrl, "Petrol Qty"),
+          field(petrolPriceCtrl, "Petrol Price"),
+          field(dieselQtyCtrl, "Diesel Qty"),
+          field(dieselPriceCtrl, "Diesel Price"),
+          ElevatedButton(
+            onPressed: addPurchase,
+            child: const Text("Add Purchase"),
+          ),
+          const SizedBox(height: 10),
+        ],
+      ),
+    );
+  }
+
+  Widget meterCard() {
+    return Card(
+      child: Column(
+        children: [
+          const ListTile(title: Text("Meter Reading")),
+          field(petrolOpenCtrl, "Petrol Opening"),
+          field(petrolCloseCtrl, "Petrol Closing"),
+          field(dieselOpenCtrl, "Diesel Opening"),
+          field(dieselCloseCtrl, "Diesel Closing"),
+          ElevatedButton(
+            onPressed: addMeter,
+            child: const Text("Add Meter Entry"),
+          ),
+          const SizedBox(height: 10),
+        ],
+      ),
+    );
+  }
+
+  Widget field(TextEditingController c, String label) {
+    return Padding(
+      padding: const EdgeInsets.all(8),
+      child: TextField(
+        controller: c,
+        keyboardType: TextInputType.number,
+        decoration: InputDecoration(
+          labelText: label,
+          border: const OutlineInputBorder(),
         ),
       ),
     );
   }
 }
 
+/* ================= HISTORY SCREEN ================= */
+
 class HistoryScreen extends StatelessWidget {
-  final List<ShiftEntry> shifts;
   final List<PurchaseEntry> purchases;
+  final List<MeterEntry> meters;
 
   const HistoryScreen({
     super.key,
-    required this.shifts,
     required this.purchases,
+    required this.meters,
   });
 
   @override
@@ -251,26 +273,18 @@ class HistoryScreen extends StatelessWidget {
       appBar: AppBar(title: const Text("History")),
       body: ListView(
         children: [
-          const ListTile(
-            title: Text("Shift History",
-                style: TextStyle(fontWeight: FontWeight.bold)),
-          ),
-          ...shifts.map((s) => ListTile(
-                title: Text(
-                    "${s.date.toLocal().toString().split(' ')[0]} - Petrol: ${s.petrolSale}L Diesel: ${s.dieselSale}L"),
-              )),
-
-          const Divider(),
-
-          const ListTile(
-            title: Text("Purchase History",
-                style: TextStyle(fontWeight: FontWeight.bold)),
-          ),
+          const ListTile(title: Text("Purchases")),
           ...purchases.map((p) => ListTile(
                 title: Text(
-                    "${p.date.toLocal().toString().split(' ')[0]} - Petrol ₹${p.petrolPrice} Diesel ₹${p.dieselPrice}"),
-                subtitle:
-                    Text("Qty: Petrol ${p.petrolQty}L | Diesel ${p.dieselQty}L"),
+                    "Petrol ${p.petrolQty}L | Diesel ${p.dieselQty}L"),
+                subtitle: Text(p.date.toString()),
+              )),
+          const Divider(),
+          const ListTile(title: Text("Meter Entries")),
+          ...meters.map((m) => ListTile(
+                title: Text(
+                    "Petrol Sale ${m.petrolSale}L | Diesel Sale ${m.dieselSale}L"),
+                subtitle: Text(m.date.toString()),
               )),
         ],
       ),
