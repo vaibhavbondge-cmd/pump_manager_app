@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "443186349294",
+    "project_id": "shri-ganesh-petroleum",
+    "storage_bucket": "shri-ganesh-petroleum.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:443186349294:android:abdeed5c0c93e8f8f01fff",
+        "android_client_info": {
+          "package_name": "com.example.pump_manager_app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCfjOLq1XNvnyj54ZkdE9NRag48WUH26II"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
